@@ -413,10 +413,21 @@ const GlobalProvider = ({ children }) => {
 
     const fetchCartItem = async () => {
         try {
-            // Add authentication check
-            const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-            if (!token && user?.token) {
-                console.log('No token found, skipping cart fetch');
+            // Check for authentication in multiple ways
+            const localToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+            const userToken = user?.token || user?.accessToken;
+            const isAuthenticated = localToken || userToken || user?._id;
+            
+            console.log('Auth Debug:', {
+                localToken: !!localToken,
+                userToken: !!userToken,
+                userId: !!user?._id,
+                userState: user,
+                isAuthenticated
+            });
+            
+            if (!isAuthenticated) {
+                console.log('No authentication found, skipping cart fetch');
                 return;
             }
 
@@ -510,8 +521,11 @@ const GlobalProvider = ({ children }) => {
 
     const fetchAddress = async () => {
         try {
-            const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-            if (!token && user?.token) {
+            const localToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+            const userToken = user?.token || user?.accessToken;
+            const isAuthenticated = localToken || userToken || user?._id;
+            
+            if (!isAuthenticated) {
                 return;
             }
 
@@ -531,8 +545,11 @@ const GlobalProvider = ({ children }) => {
 
     const fetchOrder = async () => {
         try {
-            const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
-            if (!token && user?.token) {
+            const localToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+            const userToken = user?.token || user?.accessToken;
+            const isAuthenticated = localToken || userToken || user?._id;
+            
+            if (!isAuthenticated) {
                 return;
             }
 
@@ -552,12 +569,26 @@ const GlobalProvider = ({ children }) => {
 
     // Modified useEffect to handle user state properly
     useEffect(() => {
+        // Add detailed logging
+        console.log('useEffect triggered, user state:', user);
+        console.log('localStorage contents:', {
+            token: localStorage.getItem('token'),
+            accessToken: localStorage.getItem('accessToken'),
+            allKeys: Object.keys(localStorage)
+        });
+        
         // Only fetch data if user is authenticated
-        if (user && (user.token || localStorage.getItem('token'))) {
+        const localToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        const userToken = user?.token || user?.accessToken;
+        const isAuthenticated = localToken || userToken || user?._id;
+        
+        if (isAuthenticated) {
+            console.log('User authenticated, fetching data...');
             fetchCartItem()
             fetchAddress()
             fetchOrder()
         } else {
+            console.log('User not authenticated, clearing data...');
             // Clear data if user is not authenticated
             dispatch(handleAddItemCart([]))
             dispatch(handleAddAddress([]))
