@@ -577,10 +577,18 @@ const GlobalProvider = ({ children }) => {
             allKeys: Object.keys(localStorage)
         });
         
-        // Only fetch data if user is authenticated
+        // Check for authentication more thoroughly
         const localToken = localStorage.getItem('token') || localStorage.getItem('accessToken');
         const userToken = user?.token || user?.accessToken;
-        const isAuthenticated = localToken || userToken || user?._id;
+        const hasUserId = user?._id && user._id !== '';
+        const isAuthenticated = localToken || userToken || hasUserId;
+        
+        console.log('Authentication check:', {
+            localToken: !!localToken,
+            userToken: !!userToken,
+            hasUserId,
+            isAuthenticated
+        });
         
         if (isAuthenticated) {
             console.log('User authenticated, fetching data...');
@@ -589,10 +597,13 @@ const GlobalProvider = ({ children }) => {
             fetchOrder()
         } else {
             console.log('User not authenticated, clearing data...');
-            // Clear data if user is not authenticated
-            dispatch(handleAddItemCart([]))
-            dispatch(handleAddAddress([]))
-            dispatch(setOrder([]))
+            // Only clear data if we're sure user is not authenticated
+            // Don't clear on initial load when user state might be loading
+            if (user && Object.keys(user).length > 0) {
+                dispatch(handleAddItemCart([]))
+                dispatch(handleAddAddress([]))
+                dispatch(setOrder([]))
+            }
         }
     }, [user])
 
